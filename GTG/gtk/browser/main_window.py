@@ -251,6 +251,18 @@ class MainWindow(Gtk.ApplicationWindow):
         self.calendar.set_transient_for(self)
         self.calendar.connect("date-changed", self.on_date_changed)
 
+        # Hijack the sidebar to put it into a GtkRevealer for animated slide in/out
+        # Done in code, as Glade3 is outdated and it's a pain to do it in .ui XML manually
+        self.sidebar_revealer = Gtk.Revealer()
+        self.sidebar_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_RIGHT)
+        self.sidebar_revealer.set_transition_duration(550)
+        ze_sidebar_box_container = self.sidebar.get_parent()
+        ze_sidebar_box_container.remove(self.sidebar)
+        self.sidebar_revealer.add(self.sidebar)
+        ze_sidebar_box_container.add(self.sidebar_revealer)
+        self.sidebar_revealer.show_all()
+        self.sidebar_revealer.set_reveal_child(True)
+
     def _set_defer_days(self, timer=None):
         """Set days for the defer task menu."""
 
@@ -616,16 +628,16 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_sidebar_toggled(self, action, param):
         """Toggle tags sidebar."""
 
-        visible = self.sidebar.get_property("visible")
+        visible = self.sidebar_revealer.get_property("child-revealed")
 
         if visible:
             self.config.set("tag_pane", False)
-            self.sidebar.hide()
+            self.sidebar_revealer.set_reveal_child(False)
         else:
             if not self.tagtreeview:
                 self.init_tags_sidebar()
 
-            self.sidebar.show()
+            self.sidebar_revealer.set_reveal_child(True)
             self.config.set("tag_pane", True)
 
         self.switch_sidebar_name(not visible)
